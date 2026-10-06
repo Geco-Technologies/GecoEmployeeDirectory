@@ -23,7 +23,7 @@ import * as strings from 'ModernEmployeeDirectoryWebPartStrings';
 import ModernEmployeeDirectory from './components/ModernEmployeeDirectory';
 import { IModernEmployeeDirectoryProps } from './components/IModernEmployeeDirectoryProps';
 import { GraphService } from './services/GraphService';
-import { parseEmailDomains } from './services/directoryFilter';
+import { parseEmailDomains, resolveVisibilityProperties } from './services/directoryFilter';
 
 export interface IModernEmployeeDirectoryWebPartProps {
   description: string;
@@ -107,9 +107,7 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
         filterType: this.properties.filterType || 'none',
         filterValue: this.properties.filterValue || '',
         filterSecondaryValue: this.properties.filterSecondaryValue || '',
-        excludeGuests: this.properties.excludeGuests === true,
-        excludeDisabled: this.properties.excludeDisabled !== false,
-        excludeUnlicensed: this.properties.excludeUnlicensed !== false,
+        ...resolveVisibilityProperties(this.properties),
         homePageFilterFields: this.properties.homePageFilterFields || [],
         enableAudit: this.properties.enableAudit || false,
         auditActivityColumn: this.properties.auditActivityColumn || 'Activity',
@@ -136,6 +134,9 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
   }
 
   protected onInit(): Promise<void> {
+    const visibility = resolveVisibilityProperties(this.properties);
+    this.properties.excludeDisabled = visibility.excludeDisabled;
+    this.properties.excludeUnlicensed = visibility.excludeUnlicensed;
     this._graphService = new GraphService(this.context);
     return this._getEnvironmentMessage().then(message => {
       this._environmentMessage = message;
@@ -261,9 +262,13 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
       pages: [
         {
           header: {
-            description: "General configuration for the directory display and basic behavior."
+            description: "Directory visibility is the first group on this page: hide disabled accounts, hide unlicensed users, and exclude guests."
           },
           groups: [
+            {
+              groupName: 'Directory visibility',
+              groupFields: this._visibilityToggleFields()
+            },
             {
               groupName: "Display Settings",
               groupFields: [
@@ -447,24 +452,7 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
                     label: 'Attribute Value'
                   })
                 ] : []),
-                PropertyPaneToggle('excludeGuests', {
-                  label: 'Exclude guest users',
-                  onText: 'Members only',
-                  offText: 'Include guests',
-                  checked: this.properties.excludeGuests === true
-                }),
-                PropertyPaneToggle('excludeDisabled', {
-                  label: 'Hide disabled accounts',
-                  onText: 'Enabled only',
-                  offText: 'Include disabled',
-                  checked: this.properties.excludeDisabled !== false
-                }),
-                PropertyPaneToggle('excludeUnlicensed', {
-                  label: 'Hide unlicensed users',
-                  onText: 'Licensed only',
-                  offText: 'Include unlicensed',
-                  checked: this.properties.excludeUnlicensed !== false
-                }),
+                ...this._visibilityToggleFields(),
                 PropertyFieldMultiSelect('homePageFilterFields', {
                   key: 'homePageFilterFields',
                   label: 'Home Page Dropdown Filters',
@@ -625,6 +613,30 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
       key: key,
       displayHiddenColumns: false
     });
+  }
+
+  private _visibilityToggleFields(): ReturnType<typeof PropertyPaneToggle>[] {
+    const visibility = resolveVisibilityProperties(this.properties);
+    return [
+      PropertyPaneToggle('excludeDisabled', {
+        label: 'Hide disabled accounts',
+        onText: 'Enabled only',
+        offText: 'Include disabled',
+        checked: visibility.excludeDisabled
+      }),
+      PropertyPaneToggle('excludeUnlicensed', {
+        label: 'Hide unlicensed users',
+        onText: 'Licensed only',
+        offText: 'Include unlicensed',
+        checked: visibility.excludeUnlicensed
+      }),
+      PropertyPaneToggle('excludeGuests', {
+        label: 'Exclude guest users',
+        onText: 'Members only',
+        offText: 'Include guests',
+        checked: visibility.excludeGuests
+      })
+    ];
   }
 
   private _getFilterValueLabel(): string {

@@ -109,6 +109,23 @@ export function userHasAssignedLicense(user: IDirectoryUserIdentity): boolean {
   return Array.isArray(user.assignedLicenses) && user.assignedLicenses.length > 0;
 }
 
+/**
+ * Property-pane values for a web part that was added before these toggles existed
+ * are undefined. Undefined means hide disabled and unlicensed accounts.
+ * An explicit false is the only way to include them.
+ */
+export function resolveVisibilityProperties(properties: {
+  excludeDisabled?: boolean;
+  excludeUnlicensed?: boolean;
+  excludeGuests?: boolean;
+}): { excludeDisabled: boolean; excludeUnlicensed: boolean; excludeGuests: boolean } {
+  return {
+    excludeDisabled: properties.excludeDisabled !== false,
+    excludeUnlicensed: properties.excludeUnlicensed !== false,
+    excludeGuests: properties.excludeGuests === true
+  };
+}
+
 export function buildDirectoryUserFilter(options: IDirectoryQueryOptions): IDirectoryQuery {
   const parts: string[] = [];
   let advanced: boolean = false;
