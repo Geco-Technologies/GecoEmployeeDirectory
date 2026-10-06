@@ -30,6 +30,8 @@ export interface IModernEmployeeDirectoryProps {
   filterType?: 'none' | 'domain' | 'extension' | 'department' | 'location';
   filterValue?: string;
   filterSecondaryValue?: string;
+  /** When true, Graph queries include only userType eq 'Member'. */
+  excludeGuests?: boolean;
   homePageFilterFields: string[];
   dynamicFilterData?: { [key: string]: string[] };
   // Audit Logging

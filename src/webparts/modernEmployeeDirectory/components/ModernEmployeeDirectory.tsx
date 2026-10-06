@@ -291,7 +291,8 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
   private async _handleFilterSettingChanges(prevProps: IModernEmployeeDirectoryProps): Promise<void> {
     const filterSettingChanged = prevProps.filterType !== this.props.filterType ||
       prevProps.filterValue !== this.props.filterValue ||
-      prevProps.filterSecondaryValue !== this.props.filterSecondaryValue;
+      prevProps.filterSecondaryValue !== this.props.filterSecondaryValue ||
+      prevProps.excludeGuests !== this.props.excludeGuests;
 
     if (filterSettingChanged) {
       await this._loadEmployees();
@@ -352,7 +353,8 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
             this.state.selectedLetter || undefined,
             this.props.filterType,
             this.props.filterValue,
-            this.props.filterSecondaryValue
+            this.props.filterSecondaryValue,
+            this.props.excludeGuests
           );
           employees = this._mapGraphUsersToEmployees(response.users);
           nextLink = response.nextLink;
@@ -388,7 +390,8 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
       const response = await this.graphService.getMoreUsers(
         nextPageLink,
         this.props.filterType,
-        this.props.filterValue
+        this.props.filterValue,
+        this.props.excludeGuests
       );
       const newEmployees = this._mapGraphUsersToEmployees(response.users);
 
@@ -424,7 +427,8 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
       const response = await this.graphService.getMoreUsers(
         nextPageLink,
         this.props.filterType,
-        this.props.filterValue
+        this.props.filterValue,
+        this.props.excludeGuests
       );
       const newEmployees = this._mapGraphUsersToEmployees(response.users);
 
@@ -466,13 +470,15 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
           this.state.selectedLetter || undefined,
           this.props.filterType,
           this.props.filterValue,
-          this.props.filterSecondaryValue
+          this.props.filterSecondaryValue,
+          this.props.excludeGuests
         );
       } else {
         response = await this.graphService.getMoreUsers(
           prevLink!,
           this.props.filterType,
-          this.props.filterValue
+          this.props.filterValue,
+          this.props.excludeGuests
         );
       }
 
