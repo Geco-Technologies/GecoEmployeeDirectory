@@ -3,7 +3,7 @@
   "solution": {
     "name": "Geco Employee Directory",
     "id": "f37f23a2-c9c2-411c-b85d-46f79d8b969c",
-    "version": "1.0.0.0",
+    "version": "1.1.0.0",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
@@ -30,7 +30,7 @@
         "title": "Geco Employee Directory Feature",
         "description": "Activates the Geco Employee Directory web part.",
         "id": "0da523a1-a3dd-4af4-9f3e-a4ac17808ae9",
-        "version": "1.0.0.0"
+        "version": "1.1.0.0"
       }
     ],
     "webApiPermissionRequests": [

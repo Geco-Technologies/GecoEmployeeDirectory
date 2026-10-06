@@ -138,6 +138,35 @@ describe('buildDirectoryUserFilter', () => {
 
     expect(query).toEqual({ filter: undefined, advanced: false });
   });
+
+  it('excludes disabled accounts with accountEnabled eq true', () => {
+    expect(buildDirectoryUserFilter({ excludeDisabled: true })).toEqual({
+      filter: 'accountEnabled eq true',
+      advanced: false
+    });
+  });
+
+  it('excludes users with no assigned licenses via an advanced count filter', () => {
+    expect(buildDirectoryUserFilter({ excludeUnlicensed: true })).toEqual({
+      filter: 'assignedLicenses/$count ne 0',
+      advanced: true
+    });
+  });
+
+  it('keeps domain, guest, disabled, and license filters together', () => {
+    const query = buildDirectoryUserFilter({
+      filterType: 'domain',
+      filterValue: 'brittenpearsarts.org, snapemaltings.co.uk',
+      excludeGuests: true,
+      excludeDisabled: true,
+      excludeUnlicensed: true
+    });
+
+    expect(query.advanced).toBe(true);
+    expect(query.filter).toBe(
+      "accountEnabled eq true and assignedLicenses/$count ne 0 and userType eq 'Member' and (endswith(mail,'@brittenpearsarts.org') or endswith(userPrincipalName,'@brittenpearsarts.org') or endswith(mail,'@snapemaltings.co.uk') or endswith(userPrincipalName,'@snapemaltings.co.uk'))"
+    );
+  });
 });
 
 describe('applyClientUserFilters', () => {
@@ -175,5 +204,30 @@ describe('applyClientUserFilters', () => {
     });
 
     expect(filtered).toHaveLength(1);
+  });
+
+  it('drops disabled accounts and users with no assigned licenses', () => {
+    const filtered = applyClientUserFilters([
+      { id: 'licensed', accountEnabled: true, assignedLicenses: [{ skuId: 'm365' }], userType: 'Member' },
+      { id: 'disabled', accountEnabled: false, assignedLicenses: [{ skuId: 'm365' }], userType: 'Member' },
+      { id: 'empty', accountEnabled: true, assignedLicenses: [], userType: 'Member' },
+      { id: 'missing', accountEnabled: true, userType: 'Member' }
+    ], {
+      excludeDisabled: true,
+      excludeUnlicensed: true
+    });
+
+    expect(filtered.map(user => user.id)).toEqual(['licensed']);
+  });
+
+  it('keeps disabled and unlicensed users when those filters are off', () => {
+    const filtered = applyClientUserFilters([
+      { id: 'disabled', accountEnabled: false, assignedLicenses: [] }
+    ], {
+      excludeDisabled: false,
+      excludeUnlicensed: false
+    });
+
+    expect(filtered.map(user => user.id)).toEqual(['disabled']);
   });
 });

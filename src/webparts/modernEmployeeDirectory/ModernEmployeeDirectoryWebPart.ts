@@ -50,6 +50,8 @@ export interface IModernEmployeeDirectoryWebPartProps {
   filterValue: string;
   filterSecondaryValue: string;
   excludeGuests: boolean;
+  excludeDisabled: boolean;
+  excludeUnlicensed: boolean;
   homePageFilterFields: string[];
   // Audit Logging
   enableAudit: boolean;
@@ -106,6 +108,8 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
         filterValue: this.properties.filterValue || '',
         filterSecondaryValue: this.properties.filterSecondaryValue || '',
         excludeGuests: this.properties.excludeGuests === true,
+        excludeDisabled: this.properties.excludeDisabled !== false,
+        excludeUnlicensed: this.properties.excludeUnlicensed !== false,
         homePageFilterFields: this.properties.homePageFilterFields || [],
         enableAudit: this.properties.enableAudit || false,
         auditActivityColumn: this.properties.auditActivityColumn || 'Activity',
@@ -448,6 +452,18 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
                   onText: 'Members only',
                   offText: 'Include guests',
                   checked: this.properties.excludeGuests === true
+                }),
+                PropertyPaneToggle('excludeDisabled', {
+                  label: 'Hide disabled accounts',
+                  onText: 'Enabled only',
+                  offText: 'Include disabled',
+                  checked: this.properties.excludeDisabled !== false
+                }),
+                PropertyPaneToggle('excludeUnlicensed', {
+                  label: 'Hide unlicensed users',
+                  onText: 'Licensed only',
+                  offText: 'Include unlicensed',
+                  checked: this.properties.excludeUnlicensed !== false
                 }),
                 PropertyFieldMultiSelect('homePageFilterFields', {
                   key: 'homePageFilterFields',

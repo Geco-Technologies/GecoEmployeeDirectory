@@ -1,6 +1,6 @@
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
-import { applyClientUserFilters, buildDirectoryUserFilter, parseEmailDomains } from './directoryFilter';
+import { applyClientUserFilters, buildDirectoryUserFilter, IAssignedLicense } from './directoryFilter';
 
 export interface IGraphUser {
     id: string;
@@ -16,6 +16,8 @@ export interface IGraphUser {
     mail?: string;
     userPrincipalName?: string;
     userType?: string;
+    accountEnabled?: boolean;
+    assignedLicenses?: IAssignedLicense[];
     mobilePhone?: string;
     businessPhones?: string[];
     // Extended profile fields
@@ -24,7 +26,7 @@ export interface IGraphUser {
     interests?: string[];
     pastProjects?: string[];
     // Index signature for dynamic access
-    [key: string]: string | string[] | undefined;
+    [key: string]: string | string[] | boolean | IAssignedLicense[] | undefined;
 }
 
 export interface IGraphPresence {
@@ -114,7 +116,9 @@ export class GraphService {
         filterType?: string,
         filterValue?: string,
         filterSecondaryValue?: string,
-        excludeGuests: boolean = false
+        excludeGuests: boolean = false,
+        excludeDisabled: boolean = true,
+        excludeUnlicensed: boolean = true
     ): Promise<{ users: IGraphUser[]; nextLink: string | null }> {
         try {
             const client = await this.getGraphClient();
@@ -123,15 +127,17 @@ export class GraphService {
                 filterType,
                 filterValue,
                 filterSecondaryValue,
-                excludeGuests
+                excludeGuests,
+                excludeDisabled,
+                excludeUnlicensed
             });
 
             let query = client
                 .api('/users')
-                .select('id,displayName,givenName,surname,jobTitle,department,officeLocation,city,state,country,mail,userPrincipalName,userType,mobilePhone,businessPhones,onPremisesExtensionAttributes')
+                .select('id,displayName,givenName,surname,jobTitle,department,officeLocation,city,state,country,mail,userPrincipalName,userType,accountEnabled,assignedLicenses,mobilePhone,businessPhones,onPremisesExtensionAttributes')
                 .top(pageSize);
 
-            // endsWith is an advanced directory query and is ignored without these headers.
+            // endsWith and assignedLicenses/$count are advanced directory queries.
             if (directoryQuery.advanced) {
                 query = query
                     .header('ConsistencyLevel', 'eventual')
@@ -147,7 +153,9 @@ export class GraphService {
             const users: IGraphUser[] = applyClientUserFilters(response.value || [], {
                 filterType,
                 filterValue,
-                excludeGuests
+                excludeGuests,
+                excludeDisabled,
+                excludeUnlicensed
             });
 
             return {
@@ -169,14 +177,23 @@ export class GraphService {
         nextLink: string,
         filterType?: string,
         filterValue?: string,
-        excludeGuests: boolean = false
+        excludeGuests: boolean = false,
+        excludeDisabled: boolean = true,
+        excludeUnlicensed: boolean = true
     ): Promise<{ users: IGraphUser[]; nextLink: string | null }> {
         try {
             const client = await this.getGraphClient();
             let request = client.api(nextLink);
+            const directoryQuery = buildDirectoryUserFilter({
+                filterType,
+                filterValue,
+                excludeGuests,
+                excludeDisabled,
+                excludeUnlicensed
+            });
 
             // nextLink keeps $filter and $count, but not the ConsistencyLevel header.
-            if (filterType === 'domain' && parseEmailDomains(filterValue).length > 0) {
+            if (directoryQuery.advanced) {
                 request = request.header('ConsistencyLevel', 'eventual');
             }
 
@@ -184,7 +201,9 @@ export class GraphService {
             const users: IGraphUser[] = applyClientUserFilters(response.value || [], {
                 filterType,
                 filterValue,
-                excludeGuests
+                excludeGuests,
+                excludeDisabled,
+                excludeUnlicensed
             });
 
             return {

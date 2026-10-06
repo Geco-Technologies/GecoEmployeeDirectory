@@ -32,6 +32,10 @@ export interface IModernEmployeeDirectoryProps {
   filterSecondaryValue?: string;
   /** When true, Graph queries include only userType eq 'Member'. */
   excludeGuests?: boolean;
+  /** When true, queries require accountEnabled eq true. Defaults on. */
+  excludeDisabled?: boolean;
+  /** When true, queries require at least one assigned license. Defaults on. */
+  excludeUnlicensed?: boolean;
   homePageFilterFields: string[];
   dynamicFilterData?: { [key: string]: string[] };
   // Audit Logging

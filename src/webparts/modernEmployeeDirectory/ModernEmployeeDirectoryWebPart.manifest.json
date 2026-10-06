@@ -38,7 +38,9 @@
         "kudosBadgeTypeColumn": "",
         "mainHeadingSize": 28,
         "subHeadingSize": 24,
-        "contentHeadingSize": 14
+        "contentHeadingSize": 14,
+        "excludeDisabled": true,
+        "excludeUnlicensed": true
       }
     }
   ]
