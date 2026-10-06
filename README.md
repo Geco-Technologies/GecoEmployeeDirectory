@@ -118,7 +118,7 @@ A copy of that package is also kept at the repository root as `geco-employee-dir
 
    `brittenpearsarts.org, snapemaltings.co.uk`
 
-The solution id is `f37f23a2-c9c2-411c-b85d-46f79d8b969c`. That id is different from the upstream Modern Employee Directory product, so both packages can stay in the same app catalog. The web part component id is `a199bd4d-ed10-46ed-8ff3-fc9b4be353f6`. Package version **1.1.0.0** hides disabled and unlicensed users by default.
+The solution id is `f37f23a2-c9c2-411c-b85d-46f79d8b969c`. That id is different from the upstream Modern Employee Directory product, so both packages can stay in the same app catalog. The web part component id is `a199bd4d-ed10-46ed-8ff3-fc9b4be353f6`. Package version **1.2.0.0** puts the visibility toggles on the first property pane page. Confirm the app catalog shows version 1.2.0.0 after upload; an older package does not include these fields.
 
 To ship an update, increment `solution.version` in `config/package-solution.json` (four-part version), rebuild, and upload the new `.sppkg` over the existing app.
 
@@ -147,6 +147,9 @@ The property pane is split across three pages.
 
 | Setting | Description |
 | :--- | :--- |
+| **Hide disabled accounts** | First page, **Directory visibility**, and again under **Organization Filters**. On unless an editor turns it off. An unset property still hides Entra-disabled accounts (`accountEnabled eq true`) |
+| **Hide unlicensed users** | Same groups. On unless an editor turns it off. An unset property still requires `assignedLicenses/$count ne 0` |
+| **Exclude guest users** | Same groups. Off unless an editor turns it on |
 | **Description** | Header text for the web part instance |
 | **Container Margin** | Outer margin 0–30px |
 | **Badge Circle Size** | Avatar badge size 20–60px |
@@ -167,9 +170,7 @@ The property pane is split across three pages.
 | **Filter Type** | None, Department, Office Location, Email Domain, or Extension Attribute |
 | **Email domains** | Shown when Filter Type is **By Email Domain**. One domain (`brittenpearsarts.org`) or a comma/semicolon-separated list (`brittenpearsarts.org, snapemaltings.co.uk`). The directory query includes a person when their mail or user principal name matches **any** listed domain. A single domain uses the same match as before. |
 | **Filter Value** | Department, office, or extension attribute value when another filter type is selected |
-| **Exclude guest users** | Off by default. When set to **Members only**, queries add `userType eq 'Member'` so guest accounts are left out of the directory |
-| **Hide disabled accounts** | On by default. Queries add `accountEnabled eq true`, so Entra-disabled accounts stay out of the directory. Turn off to include them |
-| **Hide unlicensed users** | On by default. Queries add `assignedLicenses/$count ne 0`, so people with no assigned Microsoft 365, Exchange, or Teams license (empty or missing `assignedLicenses`) stay out of the directory. Turn off to include them |
+| **Hide disabled accounts**, **Hide unlicensed users**, **Exclude guest users** | Repeated here from the first page so they are in the Organization Filters group as well |
 | **Home Page Dropdown Filters** | User-facing filters: Department, Location, Job Title, City, State, Country |
 | **Enable Kudos** | Toggle the Kudos recognition system |
 | **Min Kudos for Hall of Fame** | Threshold (0–20) for automatic Hall of Fame inclusion |

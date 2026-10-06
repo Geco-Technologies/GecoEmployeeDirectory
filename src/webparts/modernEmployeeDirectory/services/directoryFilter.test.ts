@@ -2,8 +2,31 @@ import {
   applyClientUserFilters,
   buildDirectoryUserFilter,
   parseEmailDomains,
+  resolveVisibilityProperties,
   userMatchesEmailDomains
 } from './directoryFilter';
+
+describe('resolveVisibilityProperties', () => {
+  it('hides disabled and unlicensed users when the properties were never saved', () => {
+    expect(resolveVisibilityProperties({})).toEqual({
+      excludeDisabled: true,
+      excludeUnlicensed: true,
+      excludeGuests: false
+    });
+  });
+
+  it('honours an explicit choice to include disabled or unlicensed users', () => {
+    expect(resolveVisibilityProperties({
+      excludeDisabled: false,
+      excludeUnlicensed: false,
+      excludeGuests: true
+    })).toEqual({
+      excludeDisabled: false,
+      excludeUnlicensed: false,
+      excludeGuests: true
+    });
+  });
+});
 
 describe('parseEmailDomains', () => {
   it('keeps a single domain as one entry', () => {
