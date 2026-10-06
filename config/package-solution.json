@@ -1,14 +1,14 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
-    "name": "modern-employee-directory-client-side-solution",
-    "id": "a35f832d-1759-4c5f-b22a-cbb5ab2dde19",
+    "name": "Geco Employee Directory",
+    "id": "f37f23a2-c9c2-411c-b85d-46f79d8b969c",
     "version": "1.0.0.0",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
     "developer": {
-      "name": "",
+      "name": "Geco Technologies",
       "websiteUrl": "",
       "privacyUrl": "",
       "termsOfUseUrl": "",
@@ -16,10 +16,10 @@
     },
     "metadata": {
       "shortDescription": {
-        "default": "modern-employee-directory description"
+        "default": "Geco Employee Directory for client tenants"
       },
       "longDescription": {
-        "default": "modern-employee-directory description"
+        "default": "SharePoint employee directory with multi-domain filtering for Geco-managed tenants, including Britten Pears Arts."
       },
       "screenshotPaths": [],
       "videoUrl": "",
@@ -27,14 +27,32 @@
     },
     "features": [
       {
-        "title": "modern-employee-directory Feature",
-        "description": "The feature that activates elements of the modern-employee-directory solution.",
-        "id": "d8a54ce0-12d4-4ff0-8131-8a97ad6b7447",
+        "title": "Geco Employee Directory Feature",
+        "description": "Activates the Geco Employee Directory web part.",
+        "id": "0da523a1-a3dd-4af4-9f3e-a4ac17808ae9",
         "version": "1.0.0.0"
+      }
+    ],
+    "webApiPermissionRequests": [
+      {
+        "resource": "Microsoft Graph",
+        "scope": "User.Read.All"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "User.ReadWrite"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "Presence.Read.All"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "People.Read.All"
       }
     ]
   },
   "paths": {
-    "zippedPackage": "solution/modern-employee-directory.sppkg"
+    "zippedPackage": "solution/geco-employee-directory.sppkg"
   }
 }

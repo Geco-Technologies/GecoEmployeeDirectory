@@ -17,6 +17,7 @@ release
 solution
 temp
 *.sppkg
+!geco-employee-directory.sppkg
 .heft
 
 # Coverage directory used by tools like istanbul

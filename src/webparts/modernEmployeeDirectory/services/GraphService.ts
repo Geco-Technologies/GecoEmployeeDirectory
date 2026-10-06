@@ -1,5 +1,6 @@
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { MSGraphClientV3 } from '@microsoft/sp-http';
+import { applyClientUserFilters, buildDirectoryUserFilter, parseEmailDomains } from './directoryFilter';
 
 export interface IGraphUser {
     id: string;
@@ -14,6 +15,7 @@ export interface IGraphUser {
     country?: string;
     mail?: string;
     userPrincipalName?: string;
+    userType?: string;
     mobilePhone?: string;
     businessPhones?: string[];
     // Extended profile fields
@@ -111,57 +113,46 @@ export class GraphService {
         filterLetter?: string,
         filterType?: string,
         filterValue?: string,
-        filterSecondaryValue?: string
+        filterSecondaryValue?: string,
+        excludeGuests: boolean = false
     ): Promise<{ users: IGraphUser[]; nextLink: string | null }> {
         try {
             const client = await this.getGraphClient();
+            const directoryQuery = buildDirectoryUserFilter({
+                filterLetter,
+                filterType,
+                filterValue,
+                filterSecondaryValue,
+                excludeGuests
+            });
+
             let query = client
                 .api('/users')
-                .select('id,displayName,givenName,surname,jobTitle,department,officeLocation,city,state,country,mail,userPrincipalName,mobilePhone,businessPhones,onPremisesExtensionAttributes')
+                .select('id,displayName,givenName,surname,jobTitle,department,officeLocation,city,state,country,mail,userPrincipalName,userType,mobilePhone,businessPhones,onPremisesExtensionAttributes')
                 .top(pageSize);
 
-            const filters: string[] = [];
-
-            if (filterLetter) {
-                filters.push(`startswith(displayName,'${filterLetter}')`);
+            // endsWith is an advanced directory query and is ignored without these headers.
+            if (directoryQuery.advanced) {
+                query = query
+                    .header('ConsistencyLevel', 'eventual')
+                    .count(true)
+                    .orderby('displayName');
             }
 
-            if (filterType && filterType !== 'none' && filterValue) {
-                switch (filterType) {
-                    case 'department':
-                        filters.push(`startswith(department,'${filterValue}')`);
-                        break;
-                    case 'location':
-                        filters.push(`startswith(officeLocation,'${filterValue}')`);
-                        break;
-                    case 'extension':
-                        if (filterSecondaryValue) {
-                            filters.push(`onPremisesExtensionAttributes/${filterValue} eq '${filterSecondaryValue}'`);
-                        }
-                        break;
-                }
-            }
-
-            if (filters.length > 0) {
-                query = query.filter(filters.join(' and '));
+            if (directoryQuery.filter) {
+                query = query.filter(directoryQuery.filter);
             }
 
             const response = await query.get();
-            let users: IGraphUser[] = response.value || [];
-            const nextLink = response['@odata.nextLink'] || null;
-
-            // Client-side fallback for 'domain' filter
-            if (filterType === 'domain' && filterValue) {
-                const domainVal = filterValue.toLowerCase();
-                users = users.filter(u =>
-                    u.mail?.toLowerCase().endsWith(`@${domainVal}`) ||
-                    u.userPrincipalName?.toLowerCase().endsWith(`@${domainVal}`)
-                );
-            }
+            const users: IGraphUser[] = applyClientUserFilters(response.value || [], {
+                filterType,
+                filterValue,
+                excludeGuests
+            });
 
             return {
                 users: users,
-                nextLink: nextLink
+                nextLink: response['@odata.nextLink'] || null
             };
         } catch (error) {
             console.error('[GraphService] Error in getUsers:', error);
@@ -177,29 +168,28 @@ export class GraphService {
     public async getMoreUsers(
         nextLink: string,
         filterType?: string,
-        filterValue?: string
+        filterValue?: string,
+        excludeGuests: boolean = false
     ): Promise<{ users: IGraphUser[]; nextLink: string | null }> {
         try {
             const client = await this.getGraphClient();
-            const response = await client
-                .api(nextLink)
-                .get();
+            let request = client.api(nextLink);
 
-            let users: IGraphUser[] = response.value || [];
-            const nextLinkResult = response['@odata.nextLink'] || null;
-
-            // Client-side fallback for 'domain' filter
-            if (filterType === 'domain' && filterValue) {
-                const domainVal = filterValue.toLowerCase();
-                users = users.filter(u =>
-                    u.mail?.toLowerCase().endsWith(`@${domainVal}`) ||
-                    u.userPrincipalName?.toLowerCase().endsWith(`@${domainVal}`)
-                );
+            // nextLink keeps $filter and $count, but not the ConsistencyLevel header.
+            if (filterType === 'domain' && parseEmailDomains(filterValue).length > 0) {
+                request = request.header('ConsistencyLevel', 'eventual');
             }
+
+            const response = await request.get();
+            const users: IGraphUser[] = applyClientUserFilters(response.value || [], {
+                filterType,
+                filterValue,
+                excludeGuests
+            });
 
             return {
                 users: users,
-                nextLink: nextLinkResult
+                nextLink: response['@odata.nextLink'] || null
             };
         } catch (error) {
             console.error('[GraphService] Error in getMoreUsers:', error);

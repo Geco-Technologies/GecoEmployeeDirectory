@@ -23,6 +23,7 @@ import * as strings from 'ModernEmployeeDirectoryWebPartStrings';
 import ModernEmployeeDirectory from './components/ModernEmployeeDirectory';
 import { IModernEmployeeDirectoryProps } from './components/IModernEmployeeDirectoryProps';
 import { GraphService } from './services/GraphService';
+import { parseEmailDomains } from './services/directoryFilter';
 
 export interface IModernEmployeeDirectoryWebPartProps {
   description: string;
@@ -48,6 +49,7 @@ export interface IModernEmployeeDirectoryWebPartProps {
   filterType: 'none' | 'domain' | 'extension' | 'department' | 'location';
   filterValue: string;
   filterSecondaryValue: string;
+  excludeGuests: boolean;
   homePageFilterFields: string[];
   // Audit Logging
   enableAudit: boolean;
@@ -103,6 +105,7 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
         filterType: this.properties.filterType || 'none',
         filterValue: this.properties.filterValue || '',
         filterSecondaryValue: this.properties.filterSecondaryValue || '',
+        excludeGuests: this.properties.excludeGuests === true,
         homePageFilterFields: this.properties.homePageFilterFields || [],
         enableAudit: this.properties.enableAudit || false,
         auditActivityColumn: this.properties.auditActivityColumn || 'Activity',
@@ -387,7 +390,7 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
         },
         {
           header: {
-            description: "Configure core directory features including filters, recognition, and the Hall of Fame."
+            description: "Configure directory filters, recognition, and the Hall of Fame. Email domain filters accept one domain or a comma/semicolon-separated list."
           },
           groups: [
             {
@@ -413,7 +416,26 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
                       disabled: this._loadingFilters
                     }) :
                     PropertyPaneTextField('filterValue', {
-                      label: this._getFilterValueLabel()
+                      label: this._getFilterValueLabel(),
+                      description: this.properties.filterType === 'domain'
+                        ? 'One domain, or several separated by commas or semicolons. Example: brittenpearsarts.org, snapemaltings.co.uk. People whose mail or user principal name matches any listed domain are included.'
+                        : undefined,
+                      placeholder: this.properties.filterType === 'domain'
+                        ? 'brittenpearsarts.org, snapemaltings.co.uk'
+                        : undefined,
+                      multiline: this.properties.filterType === 'domain',
+                      onGetErrorMessage: this.properties.filterType === 'domain'
+                        ? (value: string): string => {
+                          const tokens: string[] = (value || '')
+                            .split(/[,;]/)
+                            .map((token: string) => token.trim())
+                            .filter((token: string) => token.length > 0);
+                          if (tokens.length === 0 || parseEmailDomains(value).length === tokens.length) {
+                            return '';
+                          }
+                          return 'Each entry must be a domain name such as brittenpearsarts.org. Separate multiple domains with commas or semicolons.';
+                        }
+                        : undefined
                     })
                 ] : []),
                 ...(this.properties.filterType === 'extension' ? [
@@ -421,6 +443,12 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
                     label: 'Attribute Value'
                   })
                 ] : []),
+                PropertyPaneToggle('excludeGuests', {
+                  label: 'Exclude guest users',
+                  onText: 'Members only',
+                  offText: 'Include guests',
+                  checked: this.properties.excludeGuests === true
+                }),
                 PropertyFieldMultiSelect('homePageFilterFields', {
                   key: 'homePageFilterFields',
                   label: 'Home Page Dropdown Filters',
@@ -590,7 +618,7 @@ export default class ModernEmployeeDirectoryWebPart extends BaseClientSideWebPar
       case 'location':
         return 'Office Location';
       case 'domain':
-        return 'Domain (e.g. contoso.com)';
+        return 'Email domains';
       case 'extension':
         return 'Attribute Name (e.g. CustomAttribute1)';
       default:
