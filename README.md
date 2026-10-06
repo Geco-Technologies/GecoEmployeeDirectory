@@ -21,6 +21,7 @@ This repository is the Geco Technologies fork of [Modern Employee Directory](htt
 - Live search by name, department, or job title
 - Scope the directory by Department, Office Location, one or more Email Domains, or Extension Attribute
 - Optional member-only view that leaves out guest accounts (`userType` Guest)
+- Disabled Entra accounts (`accountEnabled eq false`) and users with no assigned Microsoft 365 licenses are hidden by default. Both can be turned off in the property pane.
 - On-page dropdown filters for Department, Office Location, Job Title, City, State, and Country
 - Pagination via Load More or Previous / Next with configurable page size (5–50 users)
 
@@ -117,7 +118,7 @@ A copy of that package is also kept at the repository root as `geco-employee-dir
 
    `brittenpearsarts.org, snapemaltings.co.uk`
 
-The solution id is `f37f23a2-c9c2-411c-b85d-46f79d8b969c`. That id is different from the upstream Modern Employee Directory product, so both packages can stay in the same app catalog. The web part component id is `a199bd4d-ed10-46ed-8ff3-fc9b4be353f6`.
+The solution id is `f37f23a2-c9c2-411c-b85d-46f79d8b969c`. That id is different from the upstream Modern Employee Directory product, so both packages can stay in the same app catalog. The web part component id is `a199bd4d-ed10-46ed-8ff3-fc9b4be353f6`. Package version **1.1.0.0** hides disabled and unlicensed users by default.
 
 To ship an update, increment `solution.version` in `config/package-solution.json` (four-part version), rebuild, and upload the new `.sppkg` over the existing app.
 
@@ -166,7 +167,9 @@ The property pane is split across three pages.
 | **Filter Type** | None, Department, Office Location, Email Domain, or Extension Attribute |
 | **Email domains** | Shown when Filter Type is **By Email Domain**. One domain (`brittenpearsarts.org`) or a comma/semicolon-separated list (`brittenpearsarts.org, snapemaltings.co.uk`). The directory query includes a person when their mail or user principal name matches **any** listed domain. A single domain uses the same match as before. |
 | **Filter Value** | Department, office, or extension attribute value when another filter type is selected |
-| **Exclude guest users** | Off by default. When set to **Members only**, queries add `userType eq 'Member'` so Azure AD guest accounts are left out of the directory |
+| **Exclude guest users** | Off by default. When set to **Members only**, queries add `userType eq 'Member'` so guest accounts are left out of the directory |
+| **Hide disabled accounts** | On by default. Queries add `accountEnabled eq true`, so Entra-disabled accounts stay out of the directory. Turn off to include them |
+| **Hide unlicensed users** | On by default. Queries add `assignedLicenses/$count ne 0`, so people with no assigned Microsoft 365, Exchange, or Teams license (empty or missing `assignedLicenses`) stay out of the directory. Turn off to include them |
 | **Home Page Dropdown Filters** | User-facing filters: Department, Location, Job Title, City, State, Country |
 | **Enable Kudos** | Toggle the Kudos recognition system |
 | **Min Kudos for Hall of Fame** | Threshold (0–20) for automatic Hall of Fame inclusion |

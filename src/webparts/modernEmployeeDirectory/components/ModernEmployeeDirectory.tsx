@@ -292,7 +292,9 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
     const filterSettingChanged = prevProps.filterType !== this.props.filterType ||
       prevProps.filterValue !== this.props.filterValue ||
       prevProps.filterSecondaryValue !== this.props.filterSecondaryValue ||
-      prevProps.excludeGuests !== this.props.excludeGuests;
+      prevProps.excludeGuests !== this.props.excludeGuests ||
+      prevProps.excludeDisabled !== this.props.excludeDisabled ||
+      prevProps.excludeUnlicensed !== this.props.excludeUnlicensed;
 
     if (filterSettingChanged) {
       await this._loadEmployees();
@@ -354,7 +356,9 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
             this.props.filterType,
             this.props.filterValue,
             this.props.filterSecondaryValue,
-            this.props.excludeGuests
+            this.props.excludeGuests,
+            this.props.excludeDisabled,
+            this.props.excludeUnlicensed
           );
           employees = this._mapGraphUsersToEmployees(response.users);
           nextLink = response.nextLink;
@@ -391,7 +395,9 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
         nextPageLink,
         this.props.filterType,
         this.props.filterValue,
-        this.props.excludeGuests
+        this.props.excludeGuests,
+        this.props.excludeDisabled,
+        this.props.excludeUnlicensed
       );
       const newEmployees = this._mapGraphUsersToEmployees(response.users);
 
@@ -428,7 +434,9 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
         nextPageLink,
         this.props.filterType,
         this.props.filterValue,
-        this.props.excludeGuests
+        this.props.excludeGuests,
+        this.props.excludeDisabled,
+        this.props.excludeUnlicensed
       );
       const newEmployees = this._mapGraphUsersToEmployees(response.users);
 
@@ -471,14 +479,18 @@ export default class ModernEmployeeDirectory extends React.Component<IModernEmpl
           this.props.filterType,
           this.props.filterValue,
           this.props.filterSecondaryValue,
-          this.props.excludeGuests
+          this.props.excludeGuests,
+          this.props.excludeDisabled,
+          this.props.excludeUnlicensed
         );
       } else {
         response = await this.graphService.getMoreUsers(
           prevLink!,
           this.props.filterType,
           this.props.filterValue,
-          this.props.excludeGuests
+          this.props.excludeGuests,
+          this.props.excludeDisabled,
+          this.props.excludeUnlicensed
         );
       }
 

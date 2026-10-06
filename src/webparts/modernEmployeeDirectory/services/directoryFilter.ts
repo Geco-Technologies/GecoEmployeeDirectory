@@ -5,10 +5,17 @@
  * Multiple domains are OR'd so a user matching any domain is included.
  */
 
+export interface IAssignedLicense {
+  skuId?: string;
+  disabledPlans?: string[];
+}
+
 export interface IDirectoryUserIdentity {
   mail?: string;
   userPrincipalName?: string;
   userType?: string;
+  accountEnabled?: boolean;
+  assignedLicenses?: IAssignedLicense[];
 }
 
 export interface IDirectoryQueryOptions {
@@ -17,13 +24,17 @@ export interface IDirectoryQueryOptions {
   filterValue?: string;
   filterSecondaryValue?: string;
   excludeGuests?: boolean;
+  /** Drop Entra accounts with accountEnabled eq false. */
+  excludeDisabled?: boolean;
+  /** Drop users whose assignedLicenses collection is missing or empty. */
+  excludeUnlicensed?: boolean;
 }
 
 export interface IDirectoryQuery {
   /** OData $filter expression. Omitted when nothing is constrained. */
   filter?: string;
   /**
-   * endsWith on directory objects requires ConsistencyLevel: eventual and $count=true.
+   * endsWith and assignedLicenses/$count require ConsistencyLevel: eventual and $count=true.
    */
   advanced: boolean;
 }
@@ -94,9 +105,22 @@ export function buildDomainODataFilter(domains: string[]): string | undefined {
   return `(${clauses.join(' or ')})`;
 }
 
+export function userHasAssignedLicense(user: IDirectoryUserIdentity): boolean {
+  return Array.isArray(user.assignedLicenses) && user.assignedLicenses.length > 0;
+}
+
 export function buildDirectoryUserFilter(options: IDirectoryQueryOptions): IDirectoryQuery {
   const parts: string[] = [];
   let advanced: boolean = false;
+
+  if (options.excludeDisabled) {
+    parts.push('accountEnabled eq true');
+  }
+
+  if (options.excludeUnlicensed) {
+    parts.push('assignedLicenses/$count ne 0');
+    advanced = true;
+  }
 
   if (options.excludeGuests) {
     parts.push("userType eq 'Member'");
@@ -145,6 +169,14 @@ export function applyClientUserFilters<T extends IDirectoryUserIdentity>(
   options: IDirectoryQueryOptions
 ): T[] {
   let result: T[] = users;
+
+  if (options.excludeDisabled) {
+    result = result.filter((user: T) => user.accountEnabled !== false);
+  }
+
+  if (options.excludeUnlicensed) {
+    result = result.filter((user: T) => userHasAssignedLicense(user));
+  }
 
   if (options.excludeGuests) {
     result = result.filter((user: T) => !user.userType || user.userType === 'Member');
